@@ -7,7 +7,7 @@ pub struct Topic {
 }
 
 impl Topic {
-    pub fn new(title: String, author: String, comment: String, updated: String) -> Topic {
+    pub fn new(title: String, author: String, comment: String, updated: String) -> Self {
         Self {
             title,
             author,

@@ -1,7 +1,9 @@
 use atom_syndication::Feed;
+use chrono::Utc;
 use color_eyre::Result;
 
 use crate::models::Topic;
+use crate::time::time_formatting::format_relative_time;
 
 const V2EX_RSS_URL: &str = "https://www.v2ex.com/feed/tab/all.xml";
 
@@ -32,6 +34,9 @@ pub fn fetch_topics() -> Result<Vec<Topic>> {
                 })
                 .unwrap_or_else(|| "0".to_string());
 
+            // Format the time
+            let updated = format_relative_time(entry.updated().with_timezone(&Utc));
+
             Topic::new(
                 entry.title().to_string(),
                 entry
@@ -39,7 +44,7 @@ pub fn fetch_topics() -> Result<Vec<Topic>> {
                     .get(0)
                     .map_or("".to_string(), |a| a.name().to_string()),
                 comment,
-                entry.updated().to_string(),
+                updated,
             )
         })
         .collect();

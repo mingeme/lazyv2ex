@@ -1,17 +1,22 @@
+use std::sync::mpsc;
+use std::thread;
 use std::time::Duration;
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction},
+    prelude::*,
     style::{palette::tailwind, Color, Modifier, Style, Stylize},
     symbols,
     text::{Line, Span},
-    widgets::{Block, Borders, Padding, Paragraph, Row, Table, TableState},
+    widgets::{Block, Borders, Paragraph, Row, Table, TableState},
     DefaultTerminal, Frame,
 };
+
 mod models;
 mod rss;
+mod time;
 
 use models::Topic;
 
@@ -56,6 +61,8 @@ struct App {
 enum Message {
     PreviousRow,
     NextRow,
+    Top,
+    Bottom,
     Reload,
     Quit,
 }
@@ -79,6 +86,8 @@ fn update(app: &mut App, msg: Message) -> Option<Message> {
             app.state.select(Some(0));
             app.items = rss::fetch_topics().unwrap();
         }
+        Message::Top => app.state.select_first(),
+        Message::Bottom => app.state.select_last(),
         Message::Quit => app.running = false,
     }
     None
@@ -181,6 +190,12 @@ fn handle_event() -> Result<Option<Message>> {
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(Some(Message::Quit)),
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    return Ok(Some(Message::Quit))
+                }
+                KeyCode::Char('r') => return Ok(Some(Message::Reload)),
+                KeyCode::Char('t') => return Ok(Some(Message::Top)),
+                KeyCode::Char('b') => return Ok(Some(Message::Bottom)),
                 KeyCode::Up | KeyCode::Char('k') => {
                     return Ok(Some(Message::PreviousRow));
                 }
