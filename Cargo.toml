@@ -7,6 +7,8 @@ edition = "2021"
 ratatui = "0.29.0"
 color-eyre = "0.6.3"
 crossterm = "0.28.1"
-reqwest = { version = "0.11", features = ["blocking"] }
-rss = "2.0"
+reqwest = { version = "0.12.12", features = ["blocking"] }
+rss = { version = "2.0", features = ["atom"] }
 chrono = "0.4"
+quick-xml = "0.31"
+atom_syndication = "0.12.6"

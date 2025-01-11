@@ -1,56 +1,46 @@
+use atom_syndication::Feed;
 use color_eyre::Result;
-use rss::Channel;
-use chrono::DateTime;
 
-const V2EX_RSS_URL: &str = "https://www.v2ex.com/index.xml";
+use crate::models::Topic;
 
-#[derive(Debug, Clone)]
-pub struct Topic {
-    pub title: String,
-    pub author: String,
-    pub comments: u32,
-    pub pub_date: DateTime<chrono::Utc>,
-    pub link: String,
-}
+const V2EX_RSS_URL: &str = "https://www.v2ex.com/feed/tab/all.xml";
 
 pub fn fetch_topics() -> Result<Vec<Topic>> {
-    let content = reqwest::blocking::get(V2EX_RSS_URL)?.bytes()?;
-    let channel = Channel::read_from(&content[..])?;
-    
-    let topics = channel
-        .items()
+    let content = reqwest::blocking::Client::builder()
+        .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+        .build()?
+        .get(V2EX_RSS_URL)
+        .send()?
+        .bytes()?;
+
+    let feed = Feed::read_from(content.as_ref())?;
+
+    let topics: Vec<Topic> = feed
+        .entries()
         .iter()
-        .filter_map(|item| {
-            let title = item.title()?.to_string();
-            let author = item.author()?.to_string();
-            let link = item.link()?.to_string();
-            
-            // Parse comments count from description
-            let comments = item
-                .description()
-                .and_then(|desc| {
-                    desc.split("评论 ")
-                        .nth(1)?
-                        .split(' ')
-                        .next()?
-                        .parse::<u32>()
-                        .ok()
+        .map(|entry| {
+            // Extract comment count from content if available
+            let comment = entry
+                .links()
+                .first()
+                .map(|c| c.href())
+                .and_then(|content| {
+                    content
+                        .split("#reply")
+                        .nth(1)
+                        .and_then(|s| s.trim().parse::<String>().ok())
                 })
-                .unwrap_or(0);
+                .unwrap_or_else(|| "0".to_string());
 
-            let pub_date = item
-                .pub_date()
-                .and_then(|date| DateTime::parse_from_rfc2822(date).ok())
-                .map(|date| date.with_timezone(&chrono::Utc))
-                .unwrap_or_else(chrono::Utc::now);
-
-            Some(Topic {
-                title,
-                author,
-                comments,
-                pub_date,
-                link,
-            })
+            Topic::new(
+                entry.title().to_string(),
+                entry
+                    .authors()
+                    .get(0)
+                    .map_or("".to_string(), |a| a.name().to_string()),
+                comment,
+                entry.updated().to_string(),
+            )
         })
         .collect();
 
