@@ -1,31 +1,50 @@
 #[derive(Debug, Clone)]
 pub struct Topic {
-    title: String,
-    author: String,
-    comment: String,
-    updated: String,
+    pub title: String,
+    pub author: String,
+    pub comment: String,
+    pub content: String,
+    pub updated: String,
+    pub link: String,
+    pub replies: Vec<Reply>,
 }
 
 impl Topic {
-    pub fn new(title: String, author: String, comment: String, updated: String) -> Self {
+    pub fn new(
+        title: String,
+        author: String,
+        comment: String,
+        content: String,
+        updated: String,
+        link: String,
+    ) -> Self {
         Self {
             title,
             author,
             comment,
+            content,
             updated,
+            link,
+            replies: Vec::new(),
         }
     }
+}
 
-    pub fn title(&self) -> &str {
-        &self.title
-    }
-    pub fn author(&self) -> &str {
-        &self.author
-    }
-    pub fn comment(&self) -> &str {
-        &self.comment
-    }
-    pub fn updated(&self) -> &str {
-        &self.updated
-    }
+#[derive(Debug, Clone)]
+pub struct Reply {
+    pub author: String,
+    pub time: String,
+    pub content: String,
+    pub number: String,
+    pub reply_to: String,
+    pub reply_count: i32,
+}
+
+#[derive(Debug, Clone)]
+pub struct TopicDetail {
+    pub content: String,
+    pub author: String,
+    pub comment: String,
+    pub updated: String,
+    pub link: String,
 }

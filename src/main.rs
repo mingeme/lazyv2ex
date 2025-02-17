@@ -1,21 +1,19 @@
-use std::sync::mpsc;
-use std::thread;
 use std::time::Duration;
 
+use api::Crawler;
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyModifiers};
 use ratatui::{
     layout::{Alignment, Constraint, Direction},
     prelude::*,
     style::{palette::tailwind, Color, Modifier, Style, Stylize},
-    symbols,
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Row, Table, TableState},
-    DefaultTerminal, Frame,
+    Frame,
 };
 
+mod api;
 mod models;
-mod rss;
 mod time;
 
 use models::Topic;
@@ -51,6 +49,7 @@ impl TableColors {
 }
 
 struct App {
+    crawler: Crawler,
     running: bool,
     state: TableState,
     items: Vec<Topic>,
@@ -63,6 +62,7 @@ enum Message {
     NextRow,
     Top,
     Bottom,
+    Enter,
     Reload,
     Quit,
 }
@@ -70,8 +70,9 @@ enum Message {
 impl App {
     fn new() -> Self {
         Self {
+            crawler: Crawler::new(),
             running: true,
-            state: TableState::default().with_selected(0),
+            state: TableState::default(),
             colors: TableColors::new(&tailwind::BLUE),
             items: vec![],
         }
@@ -84,10 +85,11 @@ fn update(app: &mut App, msg: Message) -> Option<Message> {
         Message::NextRow => app.state.select_next(),
         Message::Reload => {
             app.state.select(Some(0));
-            app.items = rss::fetch_topics().unwrap();
+            app.items = app.crawler.fetch_topics().unwrap();
         }
         Message::Top => app.state.select_first(),
         Message::Bottom => app.state.select_last(),
+        Message::Enter => {}
         Message::Quit => app.running = false,
     }
     None
@@ -136,10 +138,10 @@ fn view(app: &mut App, frame: &mut Frame) {
         .iter()
         .map(|item| {
             Row::new(vec![
-                Span::raw(item.title()),
-                Span::raw(item.author()).green(),
-                Span::raw(item.comment()).cyan(),
-                Span::raw(item.updated()).dark_gray(),
+                item.title.as_str().white(),
+                item.author.as_str().green(),
+                item.comment.as_str().cyan(),
+                item.updated.as_str().dark_gray(),
             ])
         })
         .collect();
@@ -161,7 +163,7 @@ fn view(app: &mut App, frame: &mut Frame) {
             .borders(Borders::ALL)
             .style(Style::default().fg(Color::Cyan)),
     )
-    .widths(&[
+    .widths([
         Constraint::Percentage(45),
         Constraint::Percentage(20),
         Constraint::Percentage(15),
@@ -201,6 +203,9 @@ fn handle_event() -> Result<Option<Message>> {
                 }
                 KeyCode::Down | KeyCode::Char('j') => {
                     return Ok(Some(Message::NextRow));
+                }
+                KeyCode::Enter => {
+                    return Ok(Some(Message::Enter));
                 }
                 _ => {}
             }

@@ -12,3 +12,4 @@ rss = { version = "2.0", features = ["atom"] }
 chrono = "0.4"
 quick-xml = "0.31"
 atom_syndication = "0.12.6"
+scraper = "0.18.1"
