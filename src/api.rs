@@ -3,7 +3,7 @@ use chrono::Utc;
 use color_eyre::Result;
 use scraper::{Html, Selector};
 
-use crate::models::{Reply, Topic};
+use crate::model::{Reply, Topic};
 use crate::time::time_formatting::format_relative_time;
 
 const V2EX_RSS_URL: &str = "https://www.v2ex.com/feed/tab/all.xml";
