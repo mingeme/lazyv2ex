@@ -5,6 +5,7 @@ pub enum Action {
     Top,
     Bottom,
     Enter,
-    Reload,
+    FetchTopics,
     Quit,
+    Noop,
 }

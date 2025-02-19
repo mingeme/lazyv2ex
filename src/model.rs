@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Topic {
     pub title: String,
     pub author: String,
@@ -30,7 +30,7 @@ impl Topic {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Reply {
     pub author: String,
     pub time: String,
@@ -40,7 +40,7 @@ pub struct Reply {
     pub reply_count: i32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TopicDetail {
     pub content: String,
     pub author: String,
