@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyModifiers};
+use crossterm::event::{Event, KeyCode, KeyModifiers};
 
 use crate::{
     action::Action,
@@ -31,22 +31,31 @@ impl App {
         }
     }
 
-    pub fn handle_event(&mut self, key_event: crossterm::event::KeyEvent) -> Option<Action> {
-        if key_event.code == KeyCode::Char('q') {
-            return Some(Action::Quit);
-        }
-        if key_event.code == KeyCode::Char('c') && key_event.modifiers == KeyModifiers::CONTROL {
-            return Some(Action::Quit);
+    pub fn handle_event(&mut self, event: Event) -> Option<Action> {
+        if let Event::Key(key_event) = event {
+            if key_event.code == KeyCode::Char('q') {
+                return Some(Action::Quit);
+            }
+            if key_event.code == KeyCode::Char('c') && key_event.modifiers == KeyModifiers::CONTROL
+            {
+                return Some(Action::Quit);
+            }
         }
         for page in &mut self.pages {
             if page.page_type() == self.current_page {
-                return page.handle_event(key_event);
+                return page.handle_event(event);
             }
         }
         None
     }
 
     pub fn update(&mut self, action: Action) -> Option<Action> {
+        if let Action::OpenBrowser(url) = action {
+            if let Err(e) = open::that(&url) {
+                eprintln!("Failed to open URL: {}", e);
+            }
+            return None;
+        }
         for page in &mut self.pages {
             if page.page_type() == self.current_page {
                 match action {

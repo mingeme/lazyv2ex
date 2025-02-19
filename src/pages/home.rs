@@ -1,7 +1,7 @@
 use crate::{action::Action, api::Crawler, model::Topic};
 
 use super::{Page, PageType};
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{Event, KeyCode};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{palette::tailwind, Color, Modifier, Style, Stylize},
@@ -143,9 +143,13 @@ impl Page for HomePage {
             frame.render_stateful_widget(table, main_layout[1], &mut self.state);
         }
         // Render footer with help text
-        let footer_text = Line::from(vec!["Press ".gray(), "q".cyan().bold(), " to quit".gray()]);
+        let footer_text = Line::from(vec![
+            "退出：q｜滚动：↑↓jk｜移到顶部：t｜移到底部：b｜查看：Enter"
+                .cyan()
+                .bold(),
+        ]);
         let footer = Paragraph::new(footer_text)
-            .alignment(Alignment::Center)
+            .alignment(Alignment::Left)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
@@ -154,14 +158,17 @@ impl Page for HomePage {
         frame.render_widget(footer, main_layout[2]);
     }
 
-    fn handle_event(&mut self, key: KeyEvent) -> Option<Action> {
-        match key.code {
-            KeyCode::Char('r') => Some(Action::Reload),
-            KeyCode::Char('t') => Some(Action::Top),
-            KeyCode::Char('b') => Some(Action::Bottom),
-            KeyCode::Up | KeyCode::Char('k') => Some(Action::PreviousRow),
-            KeyCode::Down | KeyCode::Char('j') => Some(Action::NextRow),
-            KeyCode::Enter => Some(Action::Enter),
+    fn handle_event(&mut self, event: Event) -> Option<Action> {
+        match event {
+            Event::Key(key) => match key.code {
+                KeyCode::Char('r') => Some(Action::Reload),
+                KeyCode::Char('t') => Some(Action::Top),
+                KeyCode::Char('b') => Some(Action::Bottom),
+                KeyCode::Up | KeyCode::Char('k') => Some(Action::PreviousRow),
+                KeyCode::Down | KeyCode::Char('j') => Some(Action::NextRow),
+                KeyCode::Enter => Some(Action::Enter),
+                _ => None,
+            },
             _ => None,
         }
     }

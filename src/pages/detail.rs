@@ -1,7 +1,7 @@
 use crate::{action::Action, api::Crawler, model::TopicDetail};
 
 use super::{Page, PageType};
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{Event, KeyCode, MouseEventKind};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -124,10 +124,26 @@ impl Page for DetailPage {
         frame.render_widget(paragraph, chunks[0]);
     }
 
-    fn handle_event(&mut self, key: KeyEvent) -> Option<Action> {
-        match key.code {
-            KeyCode::Esc => Some(Action::GoHome),
-            KeyCode::Backspace => Some(Action::GoHome),
+    fn handle_event(&mut self, event: Event) -> Option<Action> {
+        match event {
+            Event::Key(key) => match key.code {
+                KeyCode::Esc | KeyCode::Backspace => Some(Action::GoHome),
+                KeyCode::Char('o') => {
+                    if let Some(detail) = self.topic_detail.as_ref() {
+                        Some(Action::OpenBrowser(detail.link.clone()))
+                    } else {
+                        None
+                    }
+                }
+                KeyCode::Up | KeyCode::Char('k') => Some(Action::LineUp(3)),
+                KeyCode::Down | KeyCode::Char('j') => Some(Action::LineDown(3)),
+                _ => None,
+            },
+            Event::Mouse(mouse_event) => match mouse_event.kind {
+                MouseEventKind::ScrollUp => Some(Action::LineUp(3)),
+                MouseEventKind::ScrollDown => Some(Action::LineDown(3)),
+                _ => None,
+            },
             _ => None,
         }
     }
@@ -144,6 +160,8 @@ impl Page for DetailPage {
                 self.topic_detail = Some(self.crawler.fetch_topic_detail(&url).unwrap());
                 None
             }
+            Action::LineUp(count) => None,
+            Action::LineDown(count) => None,
             _ => None,
         }
     }
