@@ -195,6 +195,14 @@ impl Page for HomePage {
                 self.state.select_next();
                 None
             }
+            Action::Enter => {
+                if let Some(index) = self.state.selected() {
+                    if let Some(item) = self.items.get(index) {
+                        return Some(Action::FetchTopicDetail(item.link.clone()));
+                    }
+                }
+                None
+            }
             _ => None,
         }
     }

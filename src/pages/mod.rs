@@ -1,6 +1,6 @@
 use crate::action::Action;
 
-// pub mod detail;
+pub mod detail;
 pub mod home;
 
 pub trait Page {

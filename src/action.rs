@@ -7,5 +7,7 @@ pub enum Action {
     Enter,
     Reload,
     FetchTopics,
+    FetchTopicDetail(String),
+    GoHome,
     Quit,
 }

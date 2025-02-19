@@ -3,7 +3,7 @@ use chrono::Utc;
 use color_eyre::Result;
 use scraper::{Html, Selector};
 
-use crate::model::{Reply, Topic};
+use crate::model::{Reply, Topic, TopicDetail};
 use crate::time::time_formatting::format_relative_time;
 
 const V2EX_RSS_URL: &str = "https://www.v2ex.com/feed/tab/all.xml";
@@ -63,7 +63,7 @@ impl Crawler {
         Ok(topics)
     }
 
-    pub fn fetch_topic_detail(&self, url: &str) -> Result<Topic> {
+    pub fn fetch_topic_detail(&self, url: &str) -> Result<TopicDetail> {
         let resp = self.client.get(url).send()?.text()?;
         let document = Html::parse_document(&resp);
 
@@ -99,14 +99,15 @@ impl Crawler {
             .map(|el| el.text().collect::<String>())
             .unwrap_or_default();
 
-        let mut topic = Topic::new(
+        let mut topic_detail = TopicDetail {
             title,
-            author,
-            "0".to_string(),
             content,
-            time,
-            url.to_string(),
-        );
+            author,
+            comment: "0".to_string(),
+            updated: time,
+            link: url.to_string(),
+            replies: Vec::new(),
+        };
 
         // Parse replies
         let mut replies = Vec::new();
@@ -169,8 +170,8 @@ impl Crawler {
             replies[i].reply_count = count;
         }
 
-        topic.replies = replies;
-        Ok(topic)
+        topic_detail.replies = replies;
+        Ok(topic_detail)
     }
 }
 

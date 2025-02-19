@@ -14,7 +14,7 @@ impl App {
     pub fn new() -> Self {
         let mut pages: Vec<Box<dyn Page>> = Vec::new();
         pages.push(Box::new(crate::pages::home::HomePage::new()));
-        // pages.push(Box::new(crate::pages::detail::DetailPage::new()));
+        pages.push(Box::new(crate::pages::detail::DetailPage::new()));
 
         App {
             current_page: PageType::Home,
@@ -49,7 +49,17 @@ impl App {
     pub fn update(&mut self, action: Action) -> Option<Action> {
         for page in &mut self.pages {
             if page.page_type() == self.current_page {
-                return page.update(action);
+                match action {
+                    Action::Enter => {
+                        self.current_page = PageType::Detail;
+                    }
+                    Action::GoHome => {
+                        self.current_page = PageType::Home;
+                    }
+                    _ => {}
+                }
+                let next_action = page.update(action);
+                return next_action;
             }
         }
         None

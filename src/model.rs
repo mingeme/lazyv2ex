@@ -42,9 +42,11 @@ pub struct Reply {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopicDetail {
+    pub title: String,
     pub content: String,
     pub author: String,
     pub comment: String,
     pub updated: String,
     pub link: String,
+    pub replies: Vec<Reply>,
 }
