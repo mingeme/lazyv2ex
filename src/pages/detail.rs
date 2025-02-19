@@ -47,9 +47,9 @@ impl Page for DetailPage {
         Action::Noop
     }
 
-    fn update(&mut self, action: Action) {
+    fn update(&mut self, action: Action) -> Action {
         match action {
-            _ => {}
+            _ => Action::Noop,
         }
     }
 }

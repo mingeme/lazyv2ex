@@ -14,7 +14,7 @@ impl App {
     pub fn new() -> Self {
         let mut pages: Vec<Box<dyn Page>> = Vec::new();
         pages.push(Box::new(crate::pages::home::HomePage::new()));
-        pages.push(Box::new(crate::pages::detail::DetailPage::new()));
+        // pages.push(Box::new(crate::pages::detail::DetailPage::new()));
 
         App {
             current_page: PageType::Home,
@@ -31,37 +31,37 @@ impl App {
         }
     }
 
-    pub fn handle_event(&mut self, key_event: crossterm::event::KeyEvent) -> Action {
+    pub fn handle_event(&mut self, key_event: crossterm::event::KeyEvent) -> Option<Action> {
         if key_event.code == KeyCode::Char('q') {
-            return Action::Quit;
+            return Some(Action::Quit);
         }
         if key_event.code == KeyCode::Char('c') && key_event.modifiers == KeyModifiers::CONTROL {
-            return Action::Quit;
+            return Some(Action::Quit);
         }
         for page in &mut self.pages {
             if page.page_type() == self.current_page {
                 return page.handle_event(key_event);
             }
         }
-        Action::Noop
+        None
     }
 
-    pub fn update(&mut self, action: Action) {
+    pub fn update(&mut self, action: Action) -> Option<Action> {
         for page in &mut self.pages {
             if page.page_type() == self.current_page {
-                page.update(action);
-                break;
+                return page.update(action);
             }
         }
+        None
     }
 
-    pub fn switch_page(&mut self, page_type: PageType) -> Action {
+    pub fn switch_page(&mut self, page_type: PageType) -> Option<Action> {
         self.current_page = page_type;
         for page in &mut self.pages {
             if page.page_type() == self.current_page {
                 return page.init();
             }
         }
-        Action::Noop
+        None
     }
 }

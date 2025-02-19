@@ -11,31 +11,13 @@ use ratatui::{
 };
 
 pub struct TableColors {
-    pub buffer_bg: Color,
-    pub header_bg: Color,
-    pub header_fg: Color,
-    pub row_fg: Color,
     pub selected_row_style_fg: Color,
-    pub selected_column_style_fg: Color,
-    pub selected_cell_style_fg: Color,
-    pub normal_row_color: Color,
-    pub alt_row_color: Color,
-    pub footer_border_color: Color,
 }
 
 impl TableColors {
     const fn new(color: &tailwind::Palette) -> Self {
         Self {
-            buffer_bg: tailwind::SLATE.c950,
-            header_bg: color.c900,
-            header_fg: tailwind::SLATE.c200,
-            row_fg: tailwind::SLATE.c200,
             selected_row_style_fg: color.c400,
-            selected_column_style_fg: color.c400,
-            selected_cell_style_fg: color.c600,
-            normal_row_color: tailwind::SLATE.c950,
-            alt_row_color: tailwind::SLATE.c900,
-            footer_border_color: color.c400,
         }
     }
 }
@@ -65,8 +47,8 @@ impl Page for HomePage {
         PageType::Home
     }
 
-    fn init(&mut self) -> Action {
-        Action::FetchTopics
+    fn init(&mut self) -> Option<Action> {
+        Some(Action::FetchTopics)
     }
 
     fn render(&mut self, frame: &mut Frame) {
@@ -172,29 +154,48 @@ impl Page for HomePage {
         frame.render_widget(footer, main_layout[2]);
     }
 
-    fn handle_event(&mut self, key: KeyEvent) -> Action {
+    fn handle_event(&mut self, key: KeyEvent) -> Option<Action> {
         match key.code {
-            KeyCode::Char('r') => Action::FetchTopics,
-            KeyCode::Char('t') => Action::Top,
-            KeyCode::Char('b') => Action::Bottom,
-            KeyCode::Up | KeyCode::Char('k') => Action::PreviousRow,
-            KeyCode::Down | KeyCode::Char('j') => Action::NextRow,
-            KeyCode::Enter => Action::Enter,
-            _ => Action::Noop,
+            KeyCode::Char('r') => Some(Action::Reload),
+            KeyCode::Char('t') => Some(Action::Top),
+            KeyCode::Char('b') => Some(Action::Bottom),
+            KeyCode::Up | KeyCode::Char('k') => Some(Action::PreviousRow),
+            KeyCode::Down | KeyCode::Char('j') => Some(Action::NextRow),
+            KeyCode::Enter => Some(Action::Enter),
+            _ => None,
         }
     }
 
-    fn update(&mut self, action: Action) {
+    fn update(&mut self, action: Action) -> Option<Action> {
         match action {
+            Action::Reload => {
+                self.loading = true;
+                self.state.select_first();
+                Some(Action::FetchTopics)
+            }
             Action::FetchTopics => {
+                self.loading = false;
                 self.state.select_first();
                 self.items = self.crawler.fetch_topics().unwrap();
+                None
             }
-            Action::Top => self.state.select_first(),
-            Action::Bottom => self.state.select_last(),
-            Action::PreviousRow => self.state.select_previous(),
-            Action::NextRow => self.state.select_next(),
-            _ => {}
+            Action::Top => {
+                self.state.select_first();
+                None
+            }
+            Action::Bottom => {
+                self.state.select_last();
+                None
+            }
+            Action::PreviousRow => {
+                self.state.select_previous();
+                None
+            }
+            Action::NextRow => {
+                self.state.select_next();
+                None
+            }
+            _ => None,
         }
     }
 }
