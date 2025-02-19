@@ -14,6 +14,8 @@ pub struct DetailPage {
     loading: bool,
     topic_detail: Option<TopicDetail>,
     crawler: Crawler,
+    max_scroll: u16,
+    scroll: u16,
 }
 
 impl DetailPage {
@@ -22,6 +24,8 @@ impl DetailPage {
             loading: true,
             topic_detail: None,
             crawler: Crawler::new(),
+            max_scroll: 0,
+            scroll: 0,
         }
     }
 }
@@ -33,6 +37,8 @@ impl Page for DetailPage {
 
     fn init(&mut self) -> Option<Action> {
         self.loading = true;
+        self.topic_detail = None;
+        self.scroll = 0;
         None
     }
 
@@ -120,8 +126,15 @@ impl Page for DetailPage {
                 )]));
             });
 
-        let paragraph = Paragraph::new(lines).wrap(Wrap { trim: true });
-        frame.render_widget(paragraph, chunks[0]);
+        let area = chunks[0];
+        let text = ratatui::text::Text::from(lines);
+
+        let paragraph = Paragraph::new(text)
+            .wrap(Wrap { trim: true })
+            .scroll((self.scroll, 0));
+        let line_count = paragraph.line_count(area.width) as u16;
+        self.max_scroll = line_count.saturating_sub(area.height).max(0);
+        frame.render_widget(paragraph, area);
     }
 
     fn handle_event(&mut self, event: Event) -> Option<Action> {
@@ -150,18 +163,20 @@ impl Page for DetailPage {
 
     fn update(&mut self, action: Action) -> Option<Action> {
         match action {
-            Action::GoHome => {
-                self.loading = true;
-                self.topic_detail = None;
-                None
-            }
+            Action::GoHome => self.init(),
             Action::FetchTopicDetail(url) => {
                 self.loading = false;
                 self.topic_detail = Some(self.crawler.fetch_topic_detail(&url).unwrap());
                 None
             }
-            Action::LineUp(count) => None,
-            Action::LineDown(count) => None,
+            Action::LineUp(count) => {
+                self.scroll = self.scroll.saturating_sub(count);
+                None
+            }
+            Action::LineDown(count) => {
+                self.scroll = self.scroll.saturating_add(count).min(self.max_scroll);
+                None
+            }
             _ => None,
         }
     }

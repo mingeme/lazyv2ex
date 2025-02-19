@@ -9,8 +9,8 @@ pub enum Action {
     FetchTopics,
     FetchTopicDetail(String),
     GoHome,
-    LineUp(u32),
-    LineDown(u32),
+    LineUp(u16),
+    LineDown(u16),
     OpenBrowser(String),
     Quit,
 }
