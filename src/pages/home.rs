@@ -105,10 +105,10 @@ impl Page for HomePage {
         let table = Table::new(
             rows,
             [
-                Constraint::Percentage(45),
-                Constraint::Percentage(20),
+                Constraint::Percentage(70),
+                Constraint::Percentage(10),
+                Constraint::Percentage(10),
                 Constraint::Percentage(15),
-                Constraint::Percentage(20),
             ],
         )
         .header(header)
@@ -119,12 +119,6 @@ impl Page for HomePage {
                 .borders(Borders::ALL)
                 .style(Style::default().fg(Color::Cyan)),
         )
-        .widths([
-            Constraint::Percentage(45),
-            Constraint::Percentage(20),
-            Constraint::Percentage(15),
-            Constraint::Percentage(20),
-        ])
         .column_spacing(1)
         .style(Style::default())
         .row_highlight_style(selected_row_style);
