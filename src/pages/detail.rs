@@ -3,10 +3,10 @@ use crate::{action::Action, api::Crawler, model::TopicDetail};
 use super::{Page, PageType};
 use crossterm::event::{Event, KeyCode, MouseEventKind};
 use ratatui::{
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    layout::{Alignment, Constraint, Direction, Layout},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
-    widgets::{Paragraph, Wrap},
+    widgets::{Block, Borders, Paragraph, Wrap},
     Frame,
 };
 
@@ -45,7 +45,7 @@ impl Page for DetailPage {
     fn render(&mut self, frame: &mut Frame) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(100)].as_ref())
+            .constraints([Constraint::Min(0), Constraint::Length(3)])
             .split(frame.area());
 
         if self.loading {
@@ -135,6 +135,21 @@ impl Page for DetailPage {
         let line_count = paragraph.line_count(area.width) as u16;
         self.max_scroll = line_count.saturating_sub(area.height).max(0);
         frame.render_widget(paragraph, area);
+
+        // Render footer with help text
+        let footer_text = Line::from(vec![
+            "退出：q｜返回：Esc/Backspace｜滚动：↑↓jk｜移到顶部：t｜移到底部：b｜浏览器打开：o"
+                .cyan()
+                .bold(),
+        ]);
+        let footer = Paragraph::new(footer_text)
+            .alignment(Alignment::Left)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(Color::Cyan)),
+            );
+        frame.render_widget(footer, chunks[1]);
     }
 
     fn handle_event(&mut self, event: Event) -> Option<Action> {
@@ -148,8 +163,11 @@ impl Page for DetailPage {
                         None
                     }
                 }
+                KeyCode::Char('t') => Some(Action::Top),
+                KeyCode::Char('b') => Some(Action::Bottom),
                 KeyCode::Up | KeyCode::Char('k') => Some(Action::LineUp(3)),
                 KeyCode::Down | KeyCode::Char('j') => Some(Action::LineDown(3)),
+
                 _ => None,
             },
             Event::Mouse(mouse_event) => match mouse_event.kind {
@@ -167,6 +185,14 @@ impl Page for DetailPage {
             Action::FetchTopicDetail(url) => {
                 self.loading = false;
                 self.topic_detail = Some(self.crawler.fetch_topic_detail(&url).unwrap());
+                None
+            }
+            Action::Top => {
+                self.scroll = 0;
+                None
+            }
+            Action::Bottom => {
+                self.scroll = self.max_scroll;
                 None
             }
             Action::LineUp(count) => {
