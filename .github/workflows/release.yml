@@ -19,10 +19,11 @@ jobs:
             target: x86_64-unknown-linux-gnu
             artifact_name: lazyv2ex
             asset_name: lazyv2ex-linux-amd64
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            artifact_name: lazyv2ex
-            asset_name: lazyv2ex-linux-arm64
+          # Temporarily disable ARM64 Linux build due to OpenSSL issues
+          # - os: ubuntu-latest
+          #   target: aarch64-unknown-linux-gnu
+          #   artifact_name: lazyv2ex
+          #   asset_name: lazyv2ex-linux-arm64
           - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: lazyv2ex
@@ -44,57 +45,17 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Set up Docker for ARM64 Linux build
+      # Skip ARM64 Linux build for now as it requires more complex setup
+      - name: Skip ARM64 Linux build
         if: matrix.target == 'aarch64-unknown-linux-gnu'
-        uses: docker/setup-buildx-action@v2
+        run: echo "Skipping ARM64 Linux build for now"
 
-      - name: Build binary (non-ARM64)
+      - name: Build binary
         if: matrix.target != 'aarch64-unknown-linux-gnu'
         run: cargo build --release --target ${{ matrix.target }}
-        
-      - name: Build binary (ARM64 Linux)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          # Create a Dockerfile for the build
-          cat > Dockerfile.arm64 << 'EOF'
-          FROM rust:slim
-          
-          # Install dependencies
-          RUN apt-get update && apt-get install -y \
-              gcc-aarch64-linux-gnu \
-              g++-aarch64-linux-gnu \
-              libc6-dev-arm64-cross \
-              libssl-dev \
-              pkg-config \
-              --no-install-recommends \
-              && rm -rf /var/lib/apt/lists/*
-          
-          # Set up cross-compilation environment
-          ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc \
-              CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc \
-              CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ \
-              PKG_CONFIG_ALLOW_CROSS=1 \
-              OPENSSL_DIR=/usr \
-              OPENSSL_INCLUDE_DIR=/usr/include \
-              OPENSSL_LIB_DIR=/usr/lib
-          
-          WORKDIR /app
-          COPY . .
-          
-          RUN rustup target add aarch64-unknown-linux-gnu
-          RUN cargo build --release --target aarch64-unknown-linux-gnu
-          EOF
-          
-          # Build using Docker
-          docker buildx build --platform linux/amd64 -t rust-arm64-builder -f Dockerfile.arm64 .
-          
-          # Extract the binary from the container
-          mkdir -p target/aarch64-unknown-linux-gnu/release
-          docker create --name temp-container rust-arm64-builder
-          docker cp temp-container:/app/target/aarch64-unknown-linux-gnu/release/lazyv2ex target/aarch64-unknown-linux-gnu/release/
-          docker rm temp-container
-      
+
       - name: Prepare binary for upload
+        if: matrix.target != 'aarch64-unknown-linux-gnu'
         run: |
           # Create a directory for the renamed binaries
           mkdir -p artifacts
@@ -102,6 +63,7 @@ jobs:
           cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} artifacts/${{ matrix.asset_name }}
 
       - name: Upload binary to release
+        if: matrix.target != 'aarch64-unknown-linux-gnu'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
