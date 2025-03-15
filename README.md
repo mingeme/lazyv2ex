@@ -12,6 +12,12 @@
 
 ## 安装
 
+### Homebrew
+
+```bash
+brew install mingeme/tap/lazyv2ex
+```
+
 ### 源码构建
 
 从源码构建需要 [Rust](https://www.rust-lang.org/)

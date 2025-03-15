@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use action::Action;
 use app::App;
+use clap::Parser;
 use color_eyre::Result;
 use crossterm::event::{self};
 use pages::PageType;
@@ -13,8 +14,16 @@ mod model;
 mod pages;
 mod time;
 
+/// A command-line client for v2ex
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {}
+
 fn main() -> Result<()> {
     color_eyre::install()?;
+
+    let _ = Args::parse();
+
     let mut terminal = ratatui::init();
 
     let mut app = App::new();

@@ -55,50 +55,27 @@ impl Page for DetailPage {
             return;
         }
 
-        let mut lines = vec![];
-        lines.push(Line::from(vec![
-            Span::styled("话题：", Style::default().fg(Color::Gray)),
-            Span::styled(
-                &self.topic_detail.as_ref().unwrap().title,
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]));
-        lines.push(Line::from(vec![
-            Span::styled("楼主：", Style::default().fg(Color::Gray)),
-            Span::styled(
-                &self.topic_detail.as_ref().unwrap().author,
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]));
-
-        lines.push(Line::from(vec![
-            Span::styled("活跃时间：", Style::default().fg(Color::Gray)),
-            Span::styled(
-                &self.topic_detail.as_ref().unwrap().updated,
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]));
-        lines.push(Line::from(vec![Span::styled(
-            "内容：",
-            Style::default().fg(Color::Gray),
-        )]));
-        lines.push(Line::from(vec![Span::styled(
-            &self.topic_detail.as_ref().unwrap().content,
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        )]));
-
-        lines.push(Line::from(vec![Span::styled(
-            "评论：",
-            Style::default().fg(Color::Gray),
-        )]));
+        let detail = self.topic_detail.as_ref().unwrap();
+        let bold_cyan = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+        let gray = Style::default().fg(Color::Gray);
+        
+        let mut lines = vec![
+            Line::from(vec![
+                Span::styled("话题：", gray),
+                Span::styled(&detail.title, bold_cyan),
+            ]),
+            Line::from(vec![
+                Span::styled("楼主：", gray),
+                Span::styled(&detail.author, bold_cyan),
+            ]),
+            Line::from(vec![
+                Span::styled("活跃时间：", gray),
+                Span::styled(&detail.updated, bold_cyan),
+            ]),
+            Line::from(vec![Span::styled("内容：", gray)]),
+            Line::from(vec![Span::styled(&detail.content, bold_cyan)]),
+            Line::from(vec![Span::styled("评论：", gray)]),
+        ];
 
         self.topic_detail
             .as_ref()
@@ -133,7 +110,7 @@ impl Page for DetailPage {
             .wrap(Wrap { trim: true })
             .scroll((self.scroll, 0));
         let line_count = paragraph.line_count(area.width) as u16;
-        self.max_scroll = line_count.saturating_sub(area.height).max(0);
+        self.max_scroll = line_count.saturating_sub(area.height);
         frame.render_widget(paragraph, area);
 
         // Render footer with help text
@@ -156,13 +133,10 @@ impl Page for DetailPage {
         match event {
             Event::Key(key) => match key.code {
                 KeyCode::Esc | KeyCode::Backspace => Some(Action::GoHome),
-                KeyCode::Char('o') => {
-                    if let Some(detail) = self.topic_detail.as_ref() {
-                        Some(Action::OpenBrowser(detail.link.clone()))
-                    } else {
-                        None
-                    }
-                }
+                KeyCode::Char('o') => self
+                    .topic_detail
+                    .as_ref()
+                    .map(|detail| Action::OpenBrowser(detail.link.clone())),
                 KeyCode::Char('t') => Some(Action::Top),
                 KeyCode::Char('b') => Some(Action::Bottom),
                 KeyCode::Up | KeyCode::Char('k') => Some(Action::LineUp(3)),

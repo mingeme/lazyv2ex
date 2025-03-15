@@ -12,9 +12,10 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let mut pages: Vec<Box<dyn Page>> = Vec::new();
-        pages.push(Box::new(crate::pages::home::HomePage::new()));
-        pages.push(Box::new(crate::pages::detail::DetailPage::new()));
+        let pages: Vec<Box<dyn Page>> = vec![
+            Box::new(crate::pages::home::HomePage::new()),
+            Box::new(crate::pages::detail::DetailPage::new()),
+        ];
 
         App {
             current_page: PageType::Home,
