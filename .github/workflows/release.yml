@@ -44,19 +44,55 @@ jobs:
           target: ${{ matrix.target }}
           override: true
 
-      - name: Install cross
+      - name: Set up Docker for ARM64 Linux build
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build binary (non-ARM64)
+        if: matrix.target != 'aarch64-unknown-linux-gnu'
+        run: cargo build --release --target ${{ matrix.target }}
+        
+      - name: Build binary (ARM64 Linux)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
-          cargo install cross --git https://github.com/cross-rs/cross
-
-      - name: Build binary
-        run: |
-          # Use cross for ARM64 Linux, cargo for everything else
-          BUILD_TOOL="cargo"
-          if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
-            BUILD_TOOL="cross"
-          fi
-          $BUILD_TOOL build --release --target ${{ matrix.target }}
+          # Create a Dockerfile for the build
+          cat > Dockerfile.arm64 << 'EOF'
+          FROM rust:slim
+          
+          # Install dependencies
+          RUN apt-get update && apt-get install -y \
+              gcc-aarch64-linux-gnu \
+              g++-aarch64-linux-gnu \
+              libc6-dev-arm64-cross \
+              libssl-dev \
+              pkg-config \
+              --no-install-recommends \
+              && rm -rf /var/lib/apt/lists/*
+          
+          # Set up cross-compilation environment
+          ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc \
+              CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc \
+              CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++ \
+              PKG_CONFIG_ALLOW_CROSS=1 \
+              OPENSSL_DIR=/usr \
+              OPENSSL_INCLUDE_DIR=/usr/include \
+              OPENSSL_LIB_DIR=/usr/lib
+          
+          WORKDIR /app
+          COPY . .
+          
+          RUN rustup target add aarch64-unknown-linux-gnu
+          RUN cargo build --release --target aarch64-unknown-linux-gnu
+          EOF
+          
+          # Build using Docker
+          docker buildx build --platform linux/amd64 -t rust-arm64-builder -f Dockerfile.arm64 .
+          
+          # Extract the binary from the container
+          mkdir -p target/aarch64-unknown-linux-gnu/release
+          docker create --name temp-container rust-arm64-builder
+          docker cp temp-container:/app/target/aarch64-unknown-linux-gnu/release/lazyv2ex target/aarch64-unknown-linux-gnu/release/
+          docker rm temp-container
       
       - name: Prepare binary for upload
         run: |
