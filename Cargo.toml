@@ -14,3 +14,4 @@ quick-xml = "0.31"
 atom_syndication = "0.12.6"
 scraper = "0.18.1"
 open = "5.0"
+clap = { version = "4.5.3", features = ["derive"] }
