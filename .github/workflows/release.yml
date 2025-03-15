@@ -57,12 +57,19 @@ jobs:
             BUILD_TOOL="cross"
           fi
           $BUILD_TOOL build --release --target ${{ matrix.target }}
+      
+      - name: Prepare binary for upload
+        run: |
+          # Create a directory for the renamed binaries
+          mkdir -p artifacts
+          # Copy and rename the binary to avoid conflicts
+          cp target/${{ matrix.target }}/release/${{ matrix.artifact_name }} artifacts/${{ matrix.asset_name }}
 
       - name: Upload binary to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+          file: artifacts/${{ matrix.asset_name }}
           asset_name: ${{ matrix.asset_name }}
           tag: ${{ github.ref }}
           overwrite: true
